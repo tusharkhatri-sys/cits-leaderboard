@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 import hashlib
 import uuid
@@ -10,8 +11,9 @@ from PIL import Image
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
-# Set Tesseract CMD path for Windows
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# Set Tesseract CMD path for Windows local development
+if platform.system() == 'Windows':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Load environment variables from .env file
 load_dotenv()
