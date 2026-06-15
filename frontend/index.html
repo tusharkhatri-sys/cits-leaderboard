@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CITS Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <h1>CITS Leaderboard</h1>
+            <p>Upload your result screenshot to join the ranking!</p>
+        </div>
+    </header>
+
+    <main class="container main-layout">
+        <!-- Upload Section -->
+        <section class="upload-section card">
+            <h2>Upload Result</h2>
+            <form id="uploadForm">
+                <div class="file-drop-area">
+                    <span class="file-msg">Drag & Drop or Click to Upload Screenshot</span>
+                    <input class="file-input" type="file" id="resultFile" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn-primary" id="uploadBtn">Extract & Upload</button>
+            </form>
+            <div id="uploadStatus" class="status-msg"></div>
+        </section>
+
+        <!-- Leaderboard Section -->
+        <section class="leaderboard-section card">
+            <div class="leaderboard-header">
+                <h2>Top Performers</h2>
+                <select id="tradeFilter" class="trade-filter">
+                    <option value="all">All Trades</option>
+                </select>
+            </div>
+            <div class="table-responsive">
+                <table id="leaderboardTable">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student Name</th>
+                            <th>Trade</th>
+                            <th>Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="loadingLeaderboard" class="loading-state">Loading rankings...</div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
