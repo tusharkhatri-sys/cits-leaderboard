@@ -76,7 +76,7 @@ async def upload_result(file: UploadFile = File(...)):
             name_match = re.search(r'(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Za-z\.\s]+)', extracted_text, re.IGNORECASE)
             
         trade_match = re.search(r'Trade\s*[:\-]?\s*([A-Za-z\s]+)', extracted_text, re.IGNORECASE)
-        marks_match = re.search(r'(?:Exam Mark|Marks)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
+        marks_match = re.search(r'(?:Exam Mark|Marks|Mark|Score|Total)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
         
         if not all([email_match, name_match, trade_match, marks_match]):
             missing = []
@@ -84,10 +84,11 @@ async def upload_result(file: UploadFile = File(...)):
             if not name_match: missing.append("Name")
             if not trade_match: missing.append("Trade")
             if not marks_match: missing.append("Marks")
+            ocr_preview = extracted_text.replace('\n', ' | ')
             print(f"Missing fields: {missing}")
             raise HTTPException(
                 status_code=400, 
-                detail=f"Could not extract all required fields. Missing: {', '.join(missing)}"
+                detail=f"Missing: {', '.join(missing)}. (OCR read: {ocr_preview})"
             )
             
         raw_full_name = name_match.group(1).split('\n')[0].strip()
