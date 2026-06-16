@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = 'https://cits-backend-aek9.onrender.com/api';
 
 const uploadForm = document.getElementById('uploadForm');
 const fileInput = document.getElementById('resultFile');
