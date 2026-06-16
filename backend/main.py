@@ -75,8 +75,19 @@ async def upload_result(file: UploadFile = File(...)):
         if not name_match:
             name_match = re.search(r'(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Za-z\.\s]+)', extracted_text, re.IGNORECASE)
             
-        trade_match = re.search(r'Trade\s*[:\-]?\s*([A-Za-z\s]+)', extracted_text, re.IGNORECASE)
-        marks_match = re.search(r'(?:Exam Mark|Marks|Mark|Score|Total)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
+        trade_match = re.search(r'Trade\s*[:\-]?\s*([^\n]+)', extracted_text, re.IGNORECASE)
+        all_marks = re.findall(r'(?:Exam Mark|Marks|Mark|Score)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
+        obtained_marks = None
+        for m in all_marks:
+            if m not in ('100', '250', '200', '50'): # Ignore common total marks
+                obtained_marks = m
+                break
+        if not obtained_marks and all_marks:
+            obtained_marks = all_marks[-1] # Fallback if they actually scored full marks
+            
+        class DummyMatch:
+            def group(self, i): return obtained_marks
+        marks_match = DummyMatch() if obtained_marks else None
         
         if not all([email_match, name_match, trade_match, marks_match]):
             missing = []
