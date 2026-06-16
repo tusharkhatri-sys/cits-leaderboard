@@ -75,19 +75,23 @@ async def upload_result(file: UploadFile = File(...)):
         if not name_match:
             name_match = re.search(r'(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Za-z\.\s]+)', extracted_text, re.IGNORECASE)
             
-        trade_match = re.search(r'Trade\s*[:\-]?\s*([^\n]+)', extracted_text, re.IGNORECASE)
-        all_marks = re.findall(r'(?:Exam Mark|Marks|Mark|Score)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
-        obtained_marks = None
-        for m in all_marks:
-            if m not in ('100', '250', '200', '50'): # Ignore common total marks
-                obtained_marks = m
-                break
-        if not obtained_marks and all_marks:
-            obtained_marks = all_marks[-1] # Fallback if they actually scored full marks
-            
-        class DummyMatch:
-            def group(self, i): return obtained_marks
-        marks_match = DummyMatch() if obtained_marks else None
+        trade_match = re.search(r'Trade\s*[:\-]?\s*(.*?)\n\s*Exam Status', extracted_text, re.IGNORECASE | re.DOTALL)
+        if not trade_match:
+            trade_match = re.search(r'Trade\s*[:\-]?\s*([^\n]+)', extracted_text, re.IGNORECASE)
+        marks_match = re.search(r'(?:Exam Mark|Marks)[^:]*:\s*(\d+)', extracted_text, re.IGNORECASE)
+        if not marks_match:
+            all_marks = re.findall(r'(?:Exam Mark|Marks|Mark|Score)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
+            obtained_marks = None
+            for m in all_marks:
+                if m not in ('100', '250', '200', '50'): # Ignore common total marks
+                    obtained_marks = m
+                    break
+            if not obtained_marks and all_marks:
+                obtained_marks = all_marks[-1] # Fallback if they actually scored full marks
+                
+            class DummyMatch:
+                def group(self, i): return obtained_marks
+            marks_match = DummyMatch() if obtained_marks else None
         
         if not all([email_match, name_match, trade_match, marks_match]):
             missing = []
@@ -103,7 +107,7 @@ async def upload_result(file: UploadFile = File(...)):
             )
             
         raw_full_name = name_match.group(1).split('\n')[0].strip()
-        raw_trade_name = trade_match.group(1).split('\n')[0].strip()
+        raw_trade_name = trade_match.group(1).replace('\n', ' ').strip()
         marks = int(marks_match.group(1).strip())
         email = email_match.group(1).strip().lower()
         
