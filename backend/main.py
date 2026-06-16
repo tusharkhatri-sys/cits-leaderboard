@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 # Initialize Supabase client
+last_ocr_text = "No OCR run yet"
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -65,6 +66,8 @@ async def upload_result(file: UploadFile = File(...)):
     try:
         image = Image.open(io.BytesIO(contents))
         extracted_text = pytesseract.image_to_string(image)
+        global last_ocr_text
+        last_ocr_text = extracted_text
         print("--- OCR EXTRACTED TEXT ---")
         print(extracted_text)
         print("--------------------------")
@@ -150,6 +153,11 @@ async def upload_result(file: UploadFile = File(...)):
         except Exception as cleanup_error:
             print(f"Cleanup Warning: Could not delete {temp_filename} from storage. Error: {cleanup_error}")
 
+
+@app.get("/api/debug-ocr")
+async def get_debug_ocr():
+    global last_ocr_text
+    return {"ocr_text": last_ocr_text}
 
 @app.get("/api/leaderboard")
 async def get_leaderboard():
