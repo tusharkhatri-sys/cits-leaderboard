@@ -162,7 +162,7 @@ async def get_leaderboard():
 
 @app.delete("/api/admin/leaderboard/{entry_id}")
 async def delete_entry(entry_id: str, x_admin_key: str = Header(None)):
-    if x_admin_key != "admin123":
+    if x_admin_key != "hero2211":
         raise HTTPException(status_code=401, detail="Unauthorized: Incorrect Admin Password")
     try:
         supabase.table("leaderboard").delete().eq("id", entry_id).execute()
