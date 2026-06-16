@@ -72,29 +72,57 @@ async def upload_result(file: UploadFile = File(...)):
         print(extracted_text)
         print("--------------------------")
         
-        # Relaxing email regex to look for EITHER Email OR a 10-digit Phone Number (very robust for OCR cutoffs)
+        # Email Extraction
         email_match = re.search(r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+|\b\d{10}\b)', extracted_text)
+        
+        # Name Extraction
         name_match = re.search(r'(?:Mr\.|Ms\.|Mrs\.)\s+([A-Za-z\s]+)', extracted_text, re.IGNORECASE)
         if not name_match:
             name_match = re.search(r'(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Za-z\.\s]+)', extracted_text, re.IGNORECASE)
             
-        trade_match = re.search(r'Trade\s*[:\-]?\s*(.*?)\n\s*Exam Status', extracted_text, re.IGNORECASE | re.DOTALL)
-        if not trade_match:
-            trade_match = re.search(r'Trade\s*[:\-]?\s*([^\n]+)', extracted_text, re.IGNORECASE)
-        marks_match = re.search(r'(?:Exam Mark|Marks)[^:]*:\s*(\d+)', extracted_text, re.IGNORECASE)
-        if not marks_match:
-            all_marks = re.findall(r'(?:Exam Mark|Marks|Mark|Score)[^\d]*(\d+)', extracted_text, re.IGNORECASE)
-            obtained_marks = None
-            for m in all_marks:
-                if m not in ('100', '250', '200', '50'): # Ignore common total marks
-                    obtained_marks = m
-                    break
-            if not obtained_marks and all_marks:
-                obtained_marks = all_marks[-1] # Fallback if they actually scored full marks
+        # Trade Extraction (Robust)
+        trade_match = None
+        lines = [line.strip() for line in extracted_text.split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if re.search(r'\bTrade\b', line, re.IGNORECASE):
+                trade_parts = []
+                val = re.sub(r'(?i).*Trade\s*[:\-]?\s*', '', line).strip()
+                if val and val.lower() not in ('exam', 'exam status'):
+                    trade_parts.append(val)
+                for next_line in lines[i+1:i+5]:
+                    if re.search(r'(?i)Exam\s*Status|Present|Absent|Mark|Score|Out of', next_line):
+                        break
+                    if next_line.lower() in ('exam', 'status', 'exam status'):
+                        continue
+                    trade_parts.append(next_line)
+                trade_str = " ".join(trade_parts).strip()
                 
-            class DummyMatch:
-                def group(self, i): return obtained_marks
-            marks_match = DummyMatch() if obtained_marks else None
+                if trade_str:
+                    class DummyTrade:
+                        def group(self, i): return trade_str
+                    trade_match = DummyTrade()
+                break
+
+        # Marks Extraction (Robust)
+        marks_match = None
+        for line in lines:
+            if re.search(r'(?i)Mark|Score', line):
+                nums = re.findall(r'\b\d+\b', line)
+                valid_nums = [n for n in nums if n not in ('100', '200', '250', '50')]
+                if valid_nums:
+                    class DummyMark:
+                        def group(self, i): return valid_nums[0] # Grab the first valid mark
+                    marks_match = DummyMark()
+                    break
+                    
+        # Ultimate fallback for Marks: Just find the last valid number in the whole document
+        if not marks_match:
+            all_nums = re.findall(r'\b\d+\b', extracted_text)
+            valid_nums = [n for n in all_nums if n not in ('100', '200', '250', '50')]
+            if valid_nums:
+                class DummyMark2:
+                    def group(self, i): return valid_nums[-1]
+                marks_match = DummyMark2()
         
         if not all([email_match, name_match, trade_match, marks_match]):
             missing = []
