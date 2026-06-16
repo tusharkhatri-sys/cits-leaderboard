@@ -4,7 +4,7 @@ import re
 import hashlib
 import uuid
 import io
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 import pytesseract
 from PIL import Image
@@ -155,7 +155,17 @@ async def upload_result(file: UploadFile = File(...)):
 async def get_leaderboard():
     try:
         # Fetch leaderboard sorted by marks descending
-        response = supabase.table("leaderboard").select("student_name, trade_name, marks").order("marks", desc=True).execute()
+        response = supabase.table("leaderboard").select("id, student_name, trade_name, marks").order("marks", desc=True).execute()
         return {"data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch leaderboard: {str(e)}")
+
+@app.delete("/api/admin/leaderboard/{entry_id}")
+async def delete_entry(entry_id: str, x_admin_key: str = Header(None)):
+    if x_admin_key != "admin123":
+        raise HTTPException(status_code=401, detail="Unauthorized: Incorrect Admin Password")
+    try:
+        supabase.table("leaderboard").delete().eq("id", entry_id).execute()
+        return {"message": "Entry deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete entry: {str(e)}")

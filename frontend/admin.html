@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - CITS Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        .admin-login { max-width: 400px; margin: 100px auto; text-align: center; }
+        .admin-dashboard { display: none; margin-top: 40px; }
+        .delete-btn { background: #ff4757; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .delete-btn:hover { background: #ff6b81; }
+        #passwordInput { padding: 10px; width: 80%; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; }
+        #loginBtn { padding: 10px 20px; background: #0056b3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>CITS Admin Panel</h1>
+            <p>Manage leaderboard entries securely</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="admin-login card">
+            <h2>Admin Login</h2>
+            <p style="margin-bottom: 20px; color: #666;">Please enter the admin password to access the panel.</p>
+            <input type="password" id="passwordInput" placeholder="Enter Password">
+            <br>
+            <button id="loginBtn">Access Panel</button>
+            <p id="loginError" style="color: red; margin-top: 10px; display: none;">Incorrect Password!</p>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboardSection" class="admin-dashboard card">
+            <h2>Manage Entries</h2>
+            <table class="leaderboard-table" style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Trade</th>
+                        <th>Marks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                    <!-- Entries injected via JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>
