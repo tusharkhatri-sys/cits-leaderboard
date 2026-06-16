@@ -64,7 +64,15 @@ async def upload_result(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to upload image temporarily: {str(e)}")
 
     try:
+        from PIL import ImageEnhance
         image = Image.open(io.BytesIO(contents))
+        
+        # PRE-PROCESSING: Convert to grayscale and boost contrast 
+        # so Tesseract doesn't ignore light-colored text (like blue trade names)
+        image = image.convert('L')
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)
+        
         extracted_text = pytesseract.image_to_string(image)
         global last_ocr_text
         last_ocr_text = extracted_text
