@@ -92,30 +92,49 @@ async def upload_result(file: UploadFile = File(...)):
         
         # Robust Trade Extraction (Flat Text)
         trade_str = ""
-        KNOWN_TRADES = [
-            "Computer Software Application", "Electrician", "Fitter", "Mechanic Motor Vehicle",
-            "Welder", "Turner", "Machinist", "Wireman", "Plumber", "Carpenter", 
-            "COPA", "Electronics Mechanic", "Draughtsman", "Cosmetology", "Dress Making",
-            "Fashion Design", "Sewing Technology", "Stenographer", "Secretarial Practice",
-            "Catering", "Hospitality", "Automobile", "Civil", "Mechanical", "Electrical"
-        ]
-        for t in KNOWN_TRADES:
-            if re.search(r'\b' + t.replace(' ', r'\s*') + r'\b', flat_text, re.IGNORECASE):
-                trade_str = t
+        TRADE_PATTERNS = {
+            "Computer Software Application": r'Computer.*?Software|Computer.*?Application|COPA',
+            "Electrician": r'Electrician',
+            "Fitter": r'Fitter',
+            "Mechanic Motor Vehicle": r'Mechanic.*?Motor|MMV',
+            "Welder": r'Welder',
+            "Turner": r'Turner',
+            "Machinist": r'Machinist',
+            "Wireman": r'Wireman',
+            "Plumber": r'Plumber',
+            "Carpenter": r'Carpenter',
+            "Electronics Mechanic": r'Electronics.*?Mechanic',
+            "Draughtsman": r'Draughtsman',
+            "Cosmetology": r'Cosmetology',
+            "Dress Making": r'Dress.*?Making',
+            "Fashion Design": r'Fashion.*?Design',
+            "Sewing Technology": r'Sewing.*?Technology',
+            "Stenographer": r'Stenographer',
+            "Secretarial Practice": r'Secretarial.*?Practice',
+            "Catering": r'Catering',
+            "Hospitality": r'Hospitality',
+            "Automobile": r'Automobile',
+            "Civil": r'Civil',
+            "Mechanical": r'Mechanical',
+            "Electrical": r'Electrical'
+        }
+        for trade_name, pattern in TRADE_PATTERNS.items():
+            if re.search(pattern, flat_text, re.IGNORECASE):
+                trade_str = trade_name
                 break
         
         if not trade_str:
             m1 = re.search(r'overview\s+(.*?)\s+Your\b', flat_text, re.IGNORECASE)
             if m1 and len(m1.group(1).strip()) > 3:
-                trade_str = m1.group(1).strip()
+                trade_str = re.sub(r'[^a-zA-Z\s]', '', m1.group(1).strip())
             else:
                 m2 = re.search(r'100\)?\s*\]?\s*([A-Za-z\s]{5,})$', flat_text, re.IGNORECASE)
                 if m2:
-                    trade_str = m2.group(1).strip()
+                    trade_str = re.sub(r'[^a-zA-Z\s]', '', m2.group(1).strip())
                 else:
                     m3 = re.search(r'Trade\s*[:\-]?\s*(.*?)\s*Exam', flat_text, re.IGNORECASE)
                     if m3:
-                        trade_str = m3.group(1).strip()
+                        trade_str = re.sub(r'[^a-zA-Z\s]', '', m3.group(1).strip())
 
         trade_match = None
         if trade_str:
