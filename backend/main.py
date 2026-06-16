@@ -88,44 +88,56 @@ async def upload_result(file: UploadFile = File(...)):
         if not name_match:
             name_match = re.search(r'(?:Name|Student Name|Candidate Name)\s*[:\-]?\s*([A-Za-z\.\s]+)', extracted_text, re.IGNORECASE)
             
-        # Trade Extraction (Robust)
-        trade_match = None
-        lines = [line.strip() for line in extracted_text.split('\n') if line.strip()]
-        for i, line in enumerate(lines):
-            if re.search(r'\bTrade\b', line, re.IGNORECASE):
-                trade_parts = []
-                val = re.sub(r'(?i).*Trade\s*[:\-]?\s*', '', line).strip()
-                if val and val.lower() not in ('exam', 'exam status'):
-                    trade_parts.append(val)
-                for next_line in lines[i+1:i+5]:
-                    if re.search(r'(?i)Exam\s*Status|Present|Absent|Mark|Score|Out of', next_line):
-                        break
-                    if next_line.lower() in ('exam', 'status', 'exam status'):
-                        continue
-                    trade_parts.append(next_line)
-                trade_str = " ".join(trade_parts).strip()
-                
-                if trade_str:
-                    class DummyTrade:
-                        def group(self, i): return trade_str
-                    trade_match = DummyTrade()
+        flat_text = re.sub(r'\s+', ' ', extracted_text)
+        
+        # Robust Trade Extraction (Flat Text)
+        trade_str = ""
+        KNOWN_TRADES = [
+            "Computer Software Application", "Electrician", "Fitter", "Mechanic Motor Vehicle",
+            "Welder", "Turner", "Machinist", "Wireman", "Plumber", "Carpenter", 
+            "COPA", "Electronics Mechanic", "Draughtsman", "Cosmetology", "Dress Making",
+            "Fashion Design", "Sewing Technology", "Stenographer", "Secretarial Practice",
+            "Catering", "Hospitality", "Automobile", "Civil", "Mechanical", "Electrical"
+        ]
+        for t in KNOWN_TRADES:
+            if re.search(r'\b' + t.replace(' ', r'\s*') + r'\b', flat_text, re.IGNORECASE):
+                trade_str = t
                 break
+        
+        if not trade_str:
+            m1 = re.search(r'overview\s+(.*?)\s+Your\b', flat_text, re.IGNORECASE)
+            if m1 and len(m1.group(1).strip()) > 3:
+                trade_str = m1.group(1).strip()
+            else:
+                m2 = re.search(r'100\)?\s*\]?\s*([A-Za-z\s]{5,})$', flat_text, re.IGNORECASE)
+                if m2:
+                    trade_str = m2.group(1).strip()
+                else:
+                    m3 = re.search(r'Trade\s*[:\-]?\s*(.*?)\s*Exam', flat_text, re.IGNORECASE)
+                    if m3:
+                        trade_str = m3.group(1).strip()
 
-        # Marks Extraction (Robust)
+        trade_match = None
+        if trade_str:
+            class DummyTrade:
+                def group(self, i): return trade_str
+            trade_match = DummyTrade()
+
+        # Robust Marks Extraction (Flat Text)
         marks_match = None
-        for line in lines:
-            if re.search(r'(?i)Mark|Score', line):
-                nums = re.findall(r'\b\d+\b', line)
-                valid_nums = [n for n in nums if n not in ('100', '200', '250', '50')]
-                if valid_nums:
-                    class DummyMark:
-                        def group(self, i): return valid_nums[0] # Grab the first valid mark
-                    marks_match = DummyMark()
-                    break
-                    
-        # Ultimate fallback for Marks: Just find the last valid number in the whole document
+        m_block = re.search(r'(?i)Mark.*?(?:100\)|100\]|100|Counselling)', flat_text)
+        if m_block:
+            nums = re.findall(r'\b\d{1,3}\b', m_block.group(0))
+            valid_nums = [n for n in nums if n not in ('100', '200', '250', '50')]
+            if valid_nums:
+                class DummyMark:
+                    def group(self, i): return valid_nums[0]
+                marks_match = DummyMark()
+                
         if not marks_match:
-            all_nums = re.findall(r'\b\d+\b', extracted_text)
+            m_counsel = re.search(r'(?i)(.*?)(?:Counselling)', flat_text)
+            text_to_search = m_counsel.group(1) if m_counsel else flat_text
+            all_nums = re.findall(r'\b\d{1,3}\b', text_to_search)
             valid_nums = [n for n in all_nums if n not in ('100', '200', '250', '50')]
             if valid_nums:
                 class DummyMark2:
